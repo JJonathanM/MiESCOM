@@ -29,9 +29,9 @@ npm run dev
 
 Abre `http://localhost:5173` y entra con el usuario de demostración:
 
-| Usuario | Contraseña |
+| Boleta | Contraseña |
 |---|---|
-| `alumno.demo` | `Demo1234!` |
+| `2099630001` | `Demo1234!` |
 
 Estas credenciales son ficticias y públicas. No las reutilices en ningún otro lado.
 
@@ -42,11 +42,13 @@ backend/MiESCOM.Api/
 ├── Program.cs                     # Configuración de la API y de la cookie de sesión
 └── Auth/
     ├── AuthEndpoints.cs           # /api/auth/login, /logout y /me
+    ├── BoletaFormat.cs            # Validación de la boleta (10 dígitos)
     ├── ICredentialValidator.cs    # Contrato para validar usuarios
     └── DemoCredentialValidator.cs # Usuario de demostración; se reemplaza más adelante
 frontend/src/
 ├── App.tsx                        # Decide qué página mostrar según la sesión
 ├── api/auth.ts                    # Llamadas a la API
+├── components/Brand.tsx           # Nombre de la aplicación en la barra superior
 └── pages/                         # LoginPage y HomePage
 ```
 

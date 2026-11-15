@@ -1,35 +1,30 @@
+/*
+ * Identidad tomada de escom.ipn.mx:
+ * - Azul ESCOM #006699 y el degradado de su barra de navegación (#005580 → #006699 → #0099E6).
+ * - Fondo blanco.
+ * - Lato para el texto y Raleway para los títulos.
+ */
 :root {
-  --bg: #f4f6f9;
+  --bg: #f5f7f9;
   --surface: #ffffff;
-  --text: #1b2430;
-  --muted: #566272;
-  --border: #d8dee6;
-  --input-border: #7f8c9d;
-  --accent: #1c4e8a;
-  --accent-hover: #163f70;
-  --on-accent: #ffffff;
+  --text: #1f2933;
+  --muted: #55606e;
+  --placeholder: #6b7684;
+  --border: #d6dce4;
+  --input-border: #7d8896;
+  --primary: #006699;
+  --primary-hover: #005580;
+  --on-primary: #ffffff;
+  --header-gradient: linear-gradient(180deg, #005580 0%, #006699 75%, #0099e6 100%);
   --danger: #a4231b;
   --danger-bg: #fdecea;
 
-  color-scheme: light dark;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-}
+  --font-body: 'Lato', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Raleway', 'Lato', system-ui, 'Segoe UI', Roboto, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #12161c;
-    --surface: #1c222b;
-    --text: #e8ecf1;
-    --muted: #a3aebb;
-    --border: #2f3843;
-    --input-border: #76838f;
-    --accent: #8db9ec;
-    --accent-hover: #a9cbf2;
-    --on-accent: #10243c;
-    --danger: #f5a8a2;
-    --danger-bg: #3a1d1b;
-  }
+  color-scheme: light;
+  font-family: var(--font-body);
+  line-height: 1.5;
 }
 
 *,
@@ -44,44 +39,58 @@ body {
   color: var(--text);
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
 h1,
 p {
   margin: 0;
 }
 
 h1 {
+  font-family: var(--font-heading);
   font-size: 1.5rem;
+  font-weight: 700;
   line-height: 1.25;
 }
 
 .brand {
-  color: var(--accent);
-  font-size: 1.25rem;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
   font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .muted {
   color: var(--muted);
 }
 
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  /* Misma altura con y sin el botón de cerrar sesión (2.75rem + relleno) */
+  min-height: 4.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--primary);
+  background: var(--header-gradient);
+  color: #ffffff;
+}
+
 .login {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1.5rem;
   width: 100%;
   max-width: 26rem;
-  min-height: 100svh;
   margin-inline: auto;
-  padding: 1.5rem 1rem;
-}
-
-.login__brand {
-  text-align: center;
-}
-
-.login__brand .brand {
-  font-size: 1.75rem;
+  padding: 2rem 1rem;
 }
 
 .card {
@@ -91,7 +100,14 @@ h1 {
   padding: 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
+  border-top: 0.25rem solid var(--primary);
   border-radius: 0.75rem;
+}
+
+.card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .field {
@@ -101,7 +117,7 @@ h1 {
 }
 
 label {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 input {
@@ -115,9 +131,18 @@ input {
   font: inherit;
 }
 
+input::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}
+
+input[aria-invalid='true'] {
+  border: 2px solid var(--danger);
+}
+
 input:focus-visible,
 .button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -125,11 +150,11 @@ input:focus-visible,
   min-height: 2.75rem;
   padding: 0.5rem 1rem;
   background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  color: var(--primary);
+  border: 1px solid var(--primary);
   border-radius: 0.5rem;
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -139,13 +164,28 @@ input:focus-visible,
 }
 
 .button--primary {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .button--primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Botón sobre la barra azul */
+.button--inverse {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.button--inverse:hover:not(:disabled) {
+  background: #ffffff;
+  color: var(--primary);
+}
+
+.button--inverse:focus-visible {
+  outline-color: #ffffff;
 }
 
 .alert {
@@ -155,21 +195,11 @@ input:focus-visible,
   border-radius: 0.5rem;
 }
 
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-
 .home {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  width: 100%;
   max-width: 60rem;
   margin-inline: auto;
   padding: 2rem 1rem;

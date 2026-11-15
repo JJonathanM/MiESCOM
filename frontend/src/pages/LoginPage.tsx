@@ -1,5 +1,16 @@
-import { useState, type FormEvent } from 'react'
-import { InvalidCredentialsError, login, type User } from '../api/auth'
+import { useRef, useState, type FormEvent } from 'react'
+import {
+  BOLETA_LENGTH,
+  InvalidBoletaError,
+  InvalidCredentialsError,
+  login,
+  type User,
+} from '../api/auth'
+import { Brand } from '../components/Brand'
+
+const BOLETA_ERROR = `La boleta debe tener ${BOLETA_LENGTH} dígitos.`
+// Boleta de la cuenta de demostración; sirve como ejemplo del formato.
+const BOLETA_EXAMPLE = '2099630001'
 
 type LoginPageProps = {
   notice?: string
@@ -7,77 +18,108 @@ type LoginPageProps = {
 }
 
 export function LoginPage({ notice, onSignedIn }: LoginPageProps) {
-  const [username, setUsername] = useState('')
+  const [boleta, setBoleta] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | undefined>(notice)
+  const [isBoletaInvalid, setIsBoletaInvalid] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const boletaRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (boleta.length !== BOLETA_LENGTH) {
+      setIsBoletaInvalid(true)
+      setError(BOLETA_ERROR)
+      boletaRef.current?.focus()
+      return
+    }
+    if (password === '') {
+      setError('Escribe tu contraseña.')
+      passwordRef.current?.focus()
+      return
+    }
+
+    setIsBoletaInvalid(false)
     setError(undefined)
     setIsSubmitting(true)
 
     try {
-      onSignedIn(await login(username.trim(), password))
+      onSignedIn(await login(boleta, password))
     } catch (cause) {
       setPassword('')
-      setError(
-        cause instanceof InvalidCredentialsError
-          ? 'Usuario o contraseña incorrectos.'
-          : 'No se pudo conectar con el servidor. Intenta de nuevo.',
-      )
+      if (cause instanceof InvalidCredentialsError) {
+        setError('Boleta o contraseña incorrectas.')
+      } else if (cause instanceof InvalidBoletaError) {
+        setIsBoletaInvalid(true)
+        setError(BOLETA_ERROR)
+      } else {
+        setError('No se pudo conectar con el servidor. Intenta de nuevo.')
+      }
       setIsSubmitting(false)
     }
   }
 
   return (
-    <main className="login">
-      <div className="login__brand">
-        <p className="brand">MiESCOM</p>
-        <p className="muted">Registro de actividades culturales y deportivas</p>
-      </div>
+    <>
+      <header className="topbar">
+        <Brand />
+      </header>
 
-      <form className="card" onSubmit={handleSubmit}>
-        <h1>Iniciar sesión</h1>
+      <main className="login">
+        <form className="card" onSubmit={handleSubmit} noValidate>
+          <div className="card__header">
+            <h1>Iniciar sesión</h1>
+            <p className="muted">Registro de actividades culturales y deportivas</p>
+          </div>
 
-        {error && (
-          <p className="alert" role="alert">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p className="alert" role="alert">
+              {error}
+            </p>
+          )}
 
-        <div className="field">
-          <label htmlFor="username">Usuario</label>
-          <input
-            id="username"
-            name="username"
-            autoComplete="username"
-            autoCapitalize="none"
-            spellCheck={false}
-            required
-            autoFocus
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-          />
-        </div>
+          <div className="field">
+            <label htmlFor="boleta">Boleta</label>
+            <input
+              ref={boletaRef}
+              id="boleta"
+              name="boleta"
+              inputMode="numeric"
+              autoComplete="username"
+              maxLength={BOLETA_LENGTH}
+              placeholder={BOLETA_EXAMPLE}
+              required
+              autoFocus
+              aria-invalid={isBoletaInvalid}
+              value={boleta}
+              onChange={(event) => {
+                setBoleta(event.target.value.replace(/\D/g, '').slice(0, BOLETA_LENGTH))
+                setIsBoletaInvalid(false)
+              }}
+            />
+          </div>
 
-        <div className="field">
-          <label htmlFor="password">Contraseña</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </div>
+          <div className="field">
+            <label htmlFor="password">Contraseña</label>
+            <input
+              ref={passwordRef}
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </div>
 
-        <button className="button button--primary" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Entrando…' : 'Entrar'}
-        </button>
-      </form>
-    </main>
+          <button className="button button--primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Entrando…' : 'Entrar'}
+          </button>
+        </form>
+      </main>
+    </>
   )
 }

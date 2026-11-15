@@ -8,10 +8,11 @@ namespace MiESCOM.Api.Auth;
 /// </summary>
 public sealed class DemoCredentialValidator : ICredentialValidator
 {
-    private const string DemoUsername = "alumno.demo";
+    // Año 2099: no puede coincidir con la boleta de un alumno real.
+    private const string DemoBoleta = "2099630001";
     private const string DemoPassword = "Demo1234!";
 
-    private static readonly AppUser DemoUser = new("demo-1", DemoUsername, "Alumno de Prueba");
+    private static readonly AppUser DemoUser = new("demo-1", DemoBoleta, "Alumno de Prueba");
 
     private readonly PasswordHasher<AppUser> hasher = new();
     private readonly string demoPasswordHash;
@@ -21,11 +22,11 @@ public sealed class DemoCredentialValidator : ICredentialValidator
         demoPasswordHash = hasher.HashPassword(DemoUser, DemoPassword);
     }
 
-    public Task<AppUser?> ValidateAsync(string username, string password, CancellationToken cancellationToken)
+    public Task<AppUser?> ValidateAsync(string boleta, string password, CancellationToken cancellationToken)
     {
-        var isDemoUser = string.Equals(username, DemoUsername, StringComparison.OrdinalIgnoreCase);
+        var isDemoUser = string.Equals(boleta, DemoBoleta, StringComparison.Ordinal);
 
-        // Siempre se verifica la contraseña para que el tiempo de respuesta no revele si el usuario existe.
+        // Siempre se verifica la contraseña para que el tiempo de respuesta no revele si la boleta existe.
         var passwordMatches = hasher.VerifyHashedPassword(DemoUser, demoPasswordHash, password)
             != PasswordVerificationResult.Failed;
 

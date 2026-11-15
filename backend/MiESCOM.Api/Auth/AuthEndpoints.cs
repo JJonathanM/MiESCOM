@@ -23,8 +23,16 @@ public static class AuthEndpoints
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        if (!BoletaFormat.IsValid(request.Boleta))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["boleta"] = [$"La boleta debe tener {BoletaFormat.Length} dígitos."],
+            });
+        }
+
         var user = await credentials.ValidateAsync(
-            request.Username ?? string.Empty,
+            request.Boleta,
             request.Password ?? string.Empty,
             cancellationToken);
 
@@ -36,7 +44,7 @@ public static class AuthEndpoints
         var identity = new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.Boleta),
                 new Claim(DisplayNameClaim, user.DisplayName),
             ],
             CookieAuthenticationDefaults.AuthenticationScheme);
@@ -45,7 +53,7 @@ public static class AuthEndpoints
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
 
-        return Results.Ok(new UserResponse(user.Username, user.DisplayName));
+        return Results.Ok(new UserResponse(user.Boleta, user.DisplayName));
     }
 
     private static async Task Logout(HttpContext httpContext)
@@ -59,7 +67,7 @@ public static class AuthEndpoints
             user.FindFirstValue(ClaimTypes.Name)!,
             user.FindFirstValue(DisplayNameClaim)!));
 
-    private sealed record LoginRequest(string? Username, string? Password);
+    private sealed record LoginRequest(string? Boleta, string? Password);
 
-    private sealed record UserResponse(string Username, string DisplayName);
+    private sealed record UserResponse(string Boleta, string DisplayName);
 }

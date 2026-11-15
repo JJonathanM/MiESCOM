@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { logout, type User } from '../api/auth'
+import { Brand } from '../components/Brand'
 
 type HomePageProps = {
   user: User
@@ -26,8 +27,13 @@ export function HomePage({ user, onSignedOut }: HomePageProps) {
   return (
     <>
       <header className="topbar">
-        <p className="brand">MiESCOM</p>
-        <button className="button" type="button" onClick={handleLogout} disabled={isSigningOut}>
+        <Brand />
+        <button
+          className="button button--inverse"
+          type="button"
+          onClick={handleLogout}
+          disabled={isSigningOut}
+        >
           {isSigningOut ? 'Cerrando…' : 'Cerrar sesión'}
         </button>
       </header>
@@ -39,7 +45,7 @@ export function HomePage({ user, onSignedOut }: HomePageProps) {
           </p>
         )}
         <h1>Hola, {user.displayName}</h1>
-        <p className="muted">Iniciaste sesión como {user.username}.</p>
+        <p className="muted">Iniciaste sesión con la boleta {user.boleta}.</p>
       </main>
     </>
   )
