@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
-import { getCurrentUser, type User } from './api/auth'
+import { getCurrentSession, type AuthSession } from './api/auth'
+import type { Notice } from './components/Alert'
+import { SessionTimeout } from './components/SessionTimeout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 
 type Session =
   | { status: 'checking' }
-  | { status: 'signed-out'; notice?: string }
-  | { status: 'signed-in'; user: User }
+  | { status: 'signed-out'; notice?: Notice }
+  | { status: 'signed-in'; auth: AuthSession }
 
 function App() {
   const [session, setSession] = useState<Session>({ status: 'checking' })
@@ -14,15 +16,18 @@ function App() {
   useEffect(() => {
     const controller = new AbortController()
 
-    getCurrentUser(controller.signal)
-      .then((user) =>
-        setSession(user ? { status: 'signed-in', user } : { status: 'signed-out' }),
+    getCurrentSession(controller.signal)
+      .then((auth) =>
+        setSession(auth ? { status: 'signed-in', auth } : { status: 'signed-out' }),
       )
       .catch(() => {
         if (!controller.signal.aborted) {
           setSession({
             status: 'signed-out',
-            notice: 'No se pudo conectar con el servidor. Intenta de nuevo.',
+            notice: {
+              tone: 'error',
+              message: 'No se pudo conectar con el servidor. Intenta de nuevo.',
+            },
           })
         }
       })
@@ -36,14 +41,31 @@ function App() {
 
   if (session.status === 'signed-in') {
     return (
-      <HomePage user={session.user} onSignedOut={() => setSession({ status: 'signed-out' })} />
+      <>
+        <HomePage
+          user={session.auth.user}
+          onSignedOut={() => setSession({ status: 'signed-out' })}
+        />
+        <SessionTimeout
+          timeoutMs={session.auth.idleTimeoutMs}
+          onExpire={() =>
+            setSession({
+              status: 'signed-out',
+              notice: {
+                tone: 'info',
+                message: 'Tu sesión se cerró por inactividad. Vuelve a iniciar sesión.',
+              },
+            })
+          }
+        />
+      </>
     )
   }
 
   return (
     <LoginPage
       notice={session.notice}
-      onSignedIn={(user) => setSession({ status: 'signed-in', user })}
+      onSignedIn={(auth) => setSession({ status: 'signed-in', auth })}
     />
   )
 }

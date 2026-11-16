@@ -35,6 +35,12 @@ Abre `http://localhost:5173` y entra con el usuario de demostración:
 
 Estas credenciales son ficticias y públicas. No las reutilices en ningún otro lado.
 
+## Sesión
+
+La sesión se cierra tras **15 minutos sin actividad**. Un minuto antes aparece un aviso con el botón "Seguir conectado". Mover el ratón, tocar, teclear o desplazarse cuenta como actividad.
+
+El servidor es quien hace cumplir el límite. Para cambiarlo, edita `Session:IdleTimeoutMinutes` en `backend/MiESCOM.Api/appsettings.json`; el frontend recibe el valor desde la API.
+
 ## Estructura
 
 ```
@@ -43,12 +49,16 @@ backend/MiESCOM.Api/
 └── Auth/
     ├── AuthEndpoints.cs           # /api/auth/login, /logout y /me
     ├── BoletaFormat.cs            # Validación de la boleta (10 dígitos)
+    ├── SessionSettings.cs         # Tiempo de inactividad de la sesión
     ├── ICredentialValidator.cs    # Contrato para validar usuarios
     └── DemoCredentialValidator.cs # Usuario de demostración; se reemplaza más adelante
 frontend/src/
 ├── App.tsx                        # Decide qué página mostrar según la sesión
 ├── api/auth.ts                    # Llamadas a la API
-├── components/Brand.tsx           # Nombre de la aplicación en la barra superior
+├── components/
+│   ├── Alert.tsx                  # Mensajes de error e informativos
+│   ├── Brand.tsx                  # Nombre de la aplicación en la barra superior
+│   └── SessionTimeout.tsx         # Aviso y cierre de sesión por inactividad
 └── pages/                         # LoginPage y HomePage
 ```
 

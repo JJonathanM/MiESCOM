@@ -13,6 +13,9 @@ if (!builder.Environment.IsDevelopment())
 
 builder.Services.AddSingleton<ICredentialValidator, DemoCredentialValidator>();
 
+var sessionSettings = SessionSettings.FromConfiguration(builder.Configuration);
+builder.Services.AddSingleton(sessionSettings);
+
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -23,8 +26,16 @@ builder.Services
         options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
             ? CookieSecurePolicy.SameAsRequest
             : CookieSecurePolicy.Always;
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        // La sesión caduca tras el tiempo de inactividad configurado. Cada petición con
+        // sesión válida reinicia el plazo completo (por defecto solo se renueva cuando
+        // ya pasó la mitad, lo que acortaría el tiempo real de inactividad permitido).
+        options.ExpireTimeSpan = sessionSettings.IdleTimeout;
         options.SlidingExpiration = true;
+        options.Events.OnValidatePrincipal = context =>
+        {
+            context.ShouldRenew = true;
+            return Task.CompletedTask;
+        };
 
         // Es una API: responde con códigos de estado en lugar de redirigir a una página de login.
         options.Events.OnRedirectToLogin = context =>

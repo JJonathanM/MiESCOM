@@ -20,6 +20,7 @@ public static class AuthEndpoints
     private static async Task<IResult> Login(
         LoginRequest request,
         ICredentialValidator credentials,
+        SessionSettings session,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -53,7 +54,7 @@ public static class AuthEndpoints
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
 
-        return Results.Ok(new UserResponse(user.Boleta, user.DisplayName));
+        return Results.Ok(new SessionResponse(user.Boleta, user.DisplayName, session));
     }
 
     private static async Task Logout(HttpContext httpContext)
@@ -62,12 +63,20 @@ public static class AuthEndpoints
         httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
-    private static IResult GetCurrentUser(ClaimsPrincipal user) =>
-        Results.Ok(new UserResponse(
+    // Cada llamada con sesión válida también reinicia el plazo de inactividad (ver Program.cs).
+    private static IResult GetCurrentUser(ClaimsPrincipal user, SessionSettings session) =>
+        Results.Ok(new SessionResponse(
             user.FindFirstValue(ClaimTypes.Name)!,
-            user.FindFirstValue(DisplayNameClaim)!));
+            user.FindFirstValue(DisplayNameClaim)!,
+            session));
 
     private sealed record LoginRequest(string? Boleta, string? Password);
 
-    private sealed record UserResponse(string Boleta, string DisplayName);
+    private sealed record SessionResponse(string Boleta, string DisplayName, int IdleTimeoutSeconds)
+    {
+        public SessionResponse(string boleta, string displayName, SessionSettings session)
+            : this(boleta, displayName, (int)session.IdleTimeout.TotalSeconds)
+        {
+        }
+    }
 }

@@ -4,8 +4,9 @@ import {
   InvalidBoletaError,
   InvalidCredentialsError,
   login,
-  type User,
+  type AuthSession,
 } from '../api/auth'
+import { Alert, type Notice } from '../components/Alert'
 import { Brand } from '../components/Brand'
 
 const BOLETA_ERROR = `La boleta debe tener ${BOLETA_LENGTH} dígitos.`
@@ -13,36 +14,40 @@ const BOLETA_ERROR = `La boleta debe tener ${BOLETA_LENGTH} dígitos.`
 const BOLETA_EXAMPLE = '2099630001'
 
 type LoginPageProps = {
-  notice?: string
-  onSignedIn: (user: User) => void
+  notice?: Notice
+  onSignedIn: (auth: AuthSession) => void
 }
 
 export function LoginPage({ notice, onSignedIn }: LoginPageProps) {
   const [boleta, setBoleta] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | undefined>(notice)
+  const [message, setMessage] = useState<Notice | undefined>(notice)
   const [isBoletaInvalid, setIsBoletaInvalid] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const boletaRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
+
+  function showError(text: string) {
+    setMessage({ tone: 'error', message: text })
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (boleta.length !== BOLETA_LENGTH) {
       setIsBoletaInvalid(true)
-      setError(BOLETA_ERROR)
+      showError(BOLETA_ERROR)
       boletaRef.current?.focus()
       return
     }
     if (password === '') {
-      setError('Escribe tu contraseña.')
+      showError('Escribe tu contraseña.')
       passwordRef.current?.focus()
       return
     }
 
     setIsBoletaInvalid(false)
-    setError(undefined)
+    setMessage(undefined)
     setIsSubmitting(true)
 
     try {
@@ -50,12 +55,12 @@ export function LoginPage({ notice, onSignedIn }: LoginPageProps) {
     } catch (cause) {
       setPassword('')
       if (cause instanceof InvalidCredentialsError) {
-        setError('Boleta o contraseña incorrectas.')
+        showError('Boleta o contraseña incorrectas.')
       } else if (cause instanceof InvalidBoletaError) {
         setIsBoletaInvalid(true)
-        setError(BOLETA_ERROR)
+        showError(BOLETA_ERROR)
       } else {
-        setError('No se pudo conectar con el servidor. Intenta de nuevo.')
+        showError('No se pudo conectar con el servidor. Intenta de nuevo.')
       }
       setIsSubmitting(false)
     }
@@ -74,11 +79,7 @@ export function LoginPage({ notice, onSignedIn }: LoginPageProps) {
             <p className="muted">Registro de actividades culturales y deportivas</p>
           </div>
 
-          {error && (
-            <p className="alert" role="alert">
-              {error}
-            </p>
-          )}
+          {message && <Alert notice={message} />}
 
           <div className="field">
             <label htmlFor="boleta">Boleta</label>

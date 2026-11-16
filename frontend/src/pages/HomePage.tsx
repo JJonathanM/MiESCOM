@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { logout, type User } from '../api/auth'
+import { Alert } from '../components/Alert'
 import { Brand } from '../components/Brand'
 
 type HomePageProps = {
@@ -39,11 +40,7 @@ export function HomePage({ user, onSignedOut }: HomePageProps) {
       </header>
 
       <main className="home">
-        {error && (
-          <p className="alert" role="alert">
-            {error}
-          </p>
-        )}
+        {error && <Alert notice={{ tone: 'error', message: error }} />}
         <h1>Hola, {user.displayName}</h1>
         <p className="muted">Iniciaste sesión con la boleta {user.boleta}.</p>
       </main>

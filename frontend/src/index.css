@@ -18,6 +18,8 @@
   --header-gradient: linear-gradient(180deg, #005580 0%, #006699 75%, #0099e6 100%);
   --danger: #a4231b;
   --danger-bg: #fdecea;
+  --info: #00405f;
+  --info-bg: #e3f1f8;
 
   --font-body: 'Lato', system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Raleway', 'Lato', system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -190,9 +192,41 @@ input:focus-visible,
 
 .alert {
   padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.alert--error {
   background: var(--danger-bg);
   color: var(--danger);
-  border-radius: 0.5rem;
+}
+
+.alert--info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+/* Aviso de inactividad, fijo en la parte inferior */
+.session-warning {
+  position: fixed;
+  inset-inline: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 34rem;
+  margin-inline: auto;
+  padding: 0.875rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 0.375rem solid var(--primary);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(15, 35, 55, 0.18);
+}
+
+.session-warning p {
+  font-weight: 700;
 }
 
 .home {
