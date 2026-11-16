@@ -1,0 +1,240 @@
+/*
+ * Identidad tomada de escom.ipn.mx:
+ * - Azul ESCOM #006699 y el degradado de su barra de navegación (#005580 → #006699 → #0099E6).
+ * - Fondo blanco.
+ * - Lato para el texto y Raleway para los títulos.
+ */
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --text: #1f2933;
+  --muted: #55606e;
+  --placeholder: #6b7684;
+  --border: #d6dce4;
+  --input-border: #7d8896;
+  --primary: #006699;
+  --primary-hover: #005580;
+  --on-primary: #ffffff;
+  --header-gradient: linear-gradient(180deg, #005580 0%, #006699 75%, #0099e6 100%);
+  --danger: #a4231b;
+  --danger-bg: #fdecea;
+  --info: #00405f;
+  --info-bg: #e3f1f8;
+
+  --font-body: 'Lato', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Raleway', 'Lato', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light;
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.brand {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  /* Misma altura con y sin el botón de cerrar sesión (2.75rem + relleno) */
+  min-height: 4.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--primary);
+  background: var(--header-gradient);
+  color: #ffffff;
+}
+
+.login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: 2rem 1rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 0.25rem solid var(--primary);
+  border-radius: 0.75rem;
+}
+
+.card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+label {
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  font: inherit;
+}
+
+input::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}
+
+input[aria-invalid='true'] {
+  border: 2px solid var(--danger);
+}
+
+input:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.button {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 0.5rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.button--primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Botón sobre la barra azul */
+.button--inverse {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.button--inverse:hover:not(:disabled) {
+  background: #ffffff;
+  color: var(--primary);
+}
+
+.button--inverse:focus-visible {
+  outline-color: #ffffff;
+}
+
+.alert {
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.alert--error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.alert--info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+/* Aviso de inactividad, fijo en la parte inferior */
+.session-warning {
+  position: fixed;
+  inset-inline: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 34rem;
+  margin-inline: auto;
+  padding: 0.875rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 0.375rem solid var(--primary);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(15, 35, 55, 0.18);
+}
+
+.session-warning p {
+  font-weight: 700;
+}
+
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 60rem;
+  margin-inline: auto;
+  padding: 2rem 1rem;
+}
