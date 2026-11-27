@@ -204,3 +204,244 @@ input:focus-visible,
   margin-inline: auto;
   padding: 2rem 1rem;
 }
+
+/* Layout, logos institucionales y barra lateral deslizable */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.institutional-logos {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+.institutional-logo {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.institutional-divider {
+  width: 1px;
+  height: 22px;
+  background-color: #cbd5e1;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  z-index: 40;
+}
+
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 270px;
+  max-width: 82vw;
+  background-color: #ffffff;
+  border-right: 1px solid #dce3ea;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+.sidebar-drawer--open {
+  transform: translateX(0);
+}
+
+.sidebar-drawer__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.sidebar-drawer__logos {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sidebar-drawer__logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+}
+
+.sidebar-drawer__close {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.1rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+.sidebar-drawer__close:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.sidebar__header {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.75rem 0.75rem;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.sidebar__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.sidebar__boleta {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #006699;
+  margin-top: 0.2rem;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sidebar__link {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar__link:hover {
+  background-color: #f0f6fa;
+  color: #006699;
+}
+
+.sidebar__link--active {
+  background-color: #006699;
+  color: #ffffff;
+}
+
+.sidebar__link--active:hover {
+  background-color: #005580;
+  color: #ffffff;
+}
+
+.dashboard-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.page-title {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  color: #0f172a;
+}
+
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #dce3ea;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card h1,
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #006699;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.info-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+}
+
+.info-value {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+@media (max-width: 600px) {
+  .institutional-logos {
+    display: none;
+  }
+}

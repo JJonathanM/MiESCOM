@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MiESCOM.Api.Auth;
+using MiESCOM.Api.Alumnos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,5 +47,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapAuthEndpoints();
+app.MapAlumnoEndpoints();
 
 app.Run();
