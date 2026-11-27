@@ -1,18 +1,39 @@
+# Servicios para desarrollo: MySQL y Mailpit.
+# Solo aceptan conexiones desde la propia computadora (127.0.0.1).
+#
+# Primera vez: copia .env.example como .env y define las contraseñas. Luego:
+#   docker compose up -d
+#
+# Las tablas las crea el backend al arrancar en desarrollo (migraciones de Entity Framework).
 services:
-  postgres:
-    image: postgres:17
-    container_name: miescom-db
+  mysql:
+    image: mysql:8.4
+    container_name: miescom-mysql
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-miescom}
-      POSTGRES_USER: ${POSTGRES_USER:-miescom_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-miescom_local_dev}
+      MYSQL_DATABASE: miescom
+      MYSQL_USER: miescom
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Falta MYSQL_PASSWORD en el archivo .env (copia .env.example)}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en el archivo .env (copia .env.example)}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
     volumes:
-      - miescom_pgdata:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./database/seed-demo.sql:/docker-entrypoint-initdb.d/02-seed-demo.sql
+      - miescom_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Atrapa los correos que envía la aplicación (por ejemplo, la contraseña temporal) y los
+  # muestra en http://localhost:8025, sin enviarlos a nadie.
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    container_name: miescom-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_WEB_PORT:-8025}:8025"
 
 volumes:
-  miescom_pgdata:
+  miescom_mysql:

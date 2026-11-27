@@ -1,37 +1,66 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { getMiPerfil, type AlumnoPerfil } from '../api/alumnos'
+import { errorMessage } from '../api/http'
+import { Alert } from './Alert'
 
+const EMPTY = '—'
+
+const dateFormat = new Intl.DateTimeFormat('es-MX', { dateStyle: 'long', timeZone: 'UTC' })
+
+function formatDate(isoDate: string | null) {
+  if (!isoDate) {
+    return EMPTY
+  }
+  const [year, month, day] = isoDate.split('-').map(Number)
+  return dateFormat.format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+function formatSemester(min: number | null, max: number | null) {
+  if (min === null && max === null) {
+    return EMPTY
+  }
+  if (min === null || max === null || min === max) {
+    return `${min ?? max}°`
+  }
+  return `${min}° a ${max}°`
+}
+
+function Item({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <dt className="info-label">{label}</dt>
+      <dd className="info-value">{children ?? EMPTY}</dd>
+    </div>
+  )
+}
+
+/** Datos del alumno con sesión, leídos de la base de datos. */
 export function MiPerfilView() {
-  const [perfil, setPerfil] = useState<AlumnoPerfil | null>(null)
+  const [perfil, setPerfil] = useState<AlumnoPerfil>()
   const [error, setError] = useState<string>()
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const controller = new AbortController()
 
     getMiPerfil(controller.signal)
-      .then((data) => {
-        setPerfil(data)
-        setLoading(false)
-      })
-      .catch(() => {
+      .then(setPerfil)
+      .catch((cause) => {
         if (!controller.signal.aborted) {
-          setError('No se pudo cargar la información de tu perfil.')
-          setLoading(false)
+          setError(errorMessage(cause))
         }
       })
 
     return () => controller.abort()
   }, [])
 
-  if (loading) {
-    return <p className="muted">Cargando información del alumno...</p>
+  if (error) {
+    return <Alert notice={{ tone: 'error', message: `No se pudo cargar tu perfil. ${error}` }} />
   }
 
-  if (error || !perfil) {
+  if (!perfil) {
     return (
-      <p className="alert" role="alert">
-        {error ?? 'Información no disponible.'}
+      <p className="muted" role="status">
+        Cargando tu información…
       </p>
     )
   }
@@ -39,114 +68,60 @@ export function MiPerfilView() {
   const nombreCompleto = [perfil.nombre, perfil.primerApellido, perfil.segundoApellido]
     .filter(Boolean)
     .join(' ')
+  const { datosPersonales: personales, situacionAcademica: situacion } = perfil
 
   return (
-    <div className="profile-sections">
-      <section className="card">
-        <h2>Datos del Alumno</h2>
-        <div className="info-grid">
-          <div>
-            <span className="info-label">Nombre completo</span>
-            <p className="info-value">{nombreCompleto}</p>
-          </div>
-          <div>
-            <span className="info-label">Boleta</span>
-            <p className="info-value">{perfil.boleta}</p>
-          </div>
-          <div>
-            <span className="info-label">Correo institucional</span>
-            <p className="info-value">{perfil.emailInstitucional ?? 'No registrado'}</p>
-          </div>
-          <div>
-            <span className="info-label">Correo personal</span>
-            <p className="info-value">{perfil.emailPersonal ?? 'No registrado'}</p>
-          </div>
-          <div>
-            <span className="info-label">Periodo de ingreso</span>
-            <p className="info-value">{perfil.periodoIngreso ?? '—'}</p>
-          </div>
-        </div>
+    <>
+      <section className="card" aria-labelledby="datos-alumno">
+        <h2 id="datos-alumno">Datos del alumno</h2>
+        <dl className="info-grid">
+          <Item label="Nombre completo">{nombreCompleto}</Item>
+          <Item label="Boleta">{perfil.boleta}</Item>
+          <Item label="Correo institucional">{perfil.emailInstitucional ?? 'No registrado'}</Item>
+          <Item label="Correo personal">{perfil.emailPersonal ?? 'No registrado'}</Item>
+          <Item label="Periodo de ingreso">{perfil.periodoIngreso}</Item>
+        </dl>
       </section>
 
-      <section className="card">
-        <h2>Situación Académica ({perfil.situacionAcademica.periodoActual})</h2>
-        <div className="info-grid">
-          <div>
-            <span className="info-label">Programa académico</span>
-            <p className="info-value">{perfil.situacionAcademica.programaAcademico}</p>
-          </div>
-          <div>
-            <span className="info-label">Plan de estudios</span>
-            <p className="info-value">Plan {perfil.situacionAcademica.plan}</p>
-          </div>
-          <div>
-            <span className="info-label">Turno / Estado</span>
-            <p className="info-value">
-              {perfil.situacionAcademica.turno} · {perfil.situacionAcademica.tipoInscripcion}
-            </p>
-          </div>
-          <div>
-            <span className="info-label">Semestre</span>
-            <p className="info-value">
-              {perfil.situacionAcademica.semestreMinimo === perfil.situacionAcademica.semestreMaximo
-                ? `${perfil.situacionAcademica.semestreMinimo}°`
-                : `${perfil.situacionAcademica.semestreMinimo}° a ${perfil.situacionAcademica.semestreMaximo}°`}
-            </p>
-          </div>
-          <div>
-            <span className="info-label">Promedio general</span>
-            <p className="info-value">{perfil.situacionAcademica.promedio.toFixed(2)}</p>
-          </div>
-          <div>
-            <span className="info-label">Créditos acumulados</span>
-            <p className="info-value">
-              {perfil.situacionAcademica.creditosAlumno} / {perfil.situacionAcademica.creditosEspecialidad}
-            </p>
-          </div>
-          <div>
-            <span className="info-label">Grupos ordinarios</span>
-            <p className="info-value">
-              {perfil.situacionAcademica.gruposOrdinarios.join(', ') || 'Ninguno'}
-            </p>
-          </div>
-          <div>
-            <span className="info-label">Grupos recursamiento</span>
-            <p className="info-value">
-              {perfil.situacionAcademica.gruposRecursamiento.join(', ') || 'Ninguno'}
-            </p>
-          </div>
-        </div>
+      <section className="card" aria-labelledby="situacion-academica">
+        <h2 id="situacion-academica">
+          Situación académica{situacion && ` (${situacion.periodo})`}
+        </h2>
+        {situacion ? (
+          <dl className="info-grid">
+            <Item label="Programa académico">{situacion.programaAcademico}</Item>
+            <Item label="Plan de estudios">{situacion.plan && `Plan ${situacion.plan}`}</Item>
+            <Item label="Turno">{situacion.turno}</Item>
+            <Item label="Inscripción">{situacion.tipoInscripcion}</Item>
+            <Item label="Semestre">
+              {formatSemester(situacion.semestreMinimo, situacion.semestreMaximo)}
+            </Item>
+            <Item label="Periodos cursados">{situacion.periodosCursados}</Item>
+            <Item label="Promedio">{situacion.promedio?.toFixed(2)}</Item>
+            <Item label="Créditos acumulados">{situacion.creditosAlumno}</Item>
+            <Item label="Créditos inscritos">{situacion.creditosInscritos}</Item>
+            <Item label="Grupos">{situacion.gruposOrdinarios.join(', ') || 'Ninguno'}</Item>
+            <Item label="Grupos de recursamiento">
+              {situacion.gruposRecursamiento.join(', ') || 'Ninguno'}
+            </Item>
+          </dl>
+        ) : (
+          <p className="muted">Todavía no hay una situación académica registrada.</p>
+        )}
       </section>
 
-      <section className="card">
-        <h2>Datos Personales</h2>
-        <div className="info-grid">
-          <div>
-            <span className="info-label">CURP</span>
-            <p className="info-value">{perfil.datosPersonales.curp ?? '—'}</p>
-          </div>
-          <div>
-            <span className="info-label">Nacionalidad</span>
-            <p className="info-value">{perfil.datosPersonales.nacionalidad ?? '—'}</p>
-          </div>
-          <div>
-            <span className="info-label">Teléfono celular</span>
-            <p className="info-value">{perfil.datosPersonales.telefonoCelular ?? '—'}</p>
-          </div>
-          <div>
-            <span className="info-label">Ubicación</span>
-            <p className="info-value">
-              {[perfil.datosPersonales.domicilioMunicipio, perfil.datosPersonales.domicilioEstado]
-                .filter(Boolean)
-                .join(', ') || '—'}
-            </p>
-          </div>
-          <div>
-            <span className="info-label">Escuela de procedencia</span>
-            <p className="info-value">{perfil.datosPersonales.escuelaProcedencia ?? '—'}</p>
-          </div>
-        </div>
+      <section className="card" aria-labelledby="datos-personales">
+        <h2 id="datos-personales">Datos personales</h2>
+        <dl className="info-grid">
+          <Item label="CURP">{personales.curp}</Item>
+          <Item label="Fecha de nacimiento">{formatDate(personales.fechaNacimiento)}</Item>
+          <Item label="Sexo">{personales.sexo}</Item>
+          <Item label="Nacionalidad">{personales.nacionalidad}</Item>
+          <Item label="Teléfono">{personales.telefono}</Item>
+          <Item label="Celular">{personales.telefonoCelular}</Item>
+        </dl>
+        <p className="card__note">La fecha de nacimiento y el sexo se obtienen de tu CURP.</p>
       </section>
-    </div>
+    </>
   )
 }

@@ -2,24 +2,41 @@
 
 Página web para el registro de alumnos en actividades culturales y deportivas, con planes de sumar otros servicios más adelante.
 
-> **Estado: prueba de concepto.** El login usa un usuario de demostración y no hay base de datos. La aplicación no arranca fuera del entorno de desarrollo.
+> **Estado: prueba de concepto.** Funcionan el registro de usuario con contraseña temporal por correo, el inicio de sesión, el cambio de contraseña y la consulta de "Mi perfil" con datos de MySQL. En desarrollo se usan alumnos inventados.
 
 ## Requisitos
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
 - [Node.js](https://nodejs.org/) LTS
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (MySQL y Mailpit para desarrollo)
 
 ## Cómo ejecutarlo
 
-Usa dos terminales, desde la raíz del repo.
+Desde la raíz del repo.
 
-**Backend** (`http://localhost:5080`):
+**1. Base de datos y correo de prueba** (la primera vez, copia `.env.example` como `.env` y define las contraseñas):
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+docker compose up -d
+```
+
+**2. Cadena de conexión** (una sola vez; toma la `MYSQL_PASSWORD` del `.env` y se guarda fuera del repo):
+
+```powershell
+$pw = (Select-String -Path .env -Pattern '^MYSQL_PASSWORD=(.*)$').Matches[0].Groups[1].Value
+dotnet user-secrets set "ConnectionStrings:MiEscom" "server=127.0.0.1;port=3306;database=miescom;user=miescom;password=$pw" --project backend/MiESCOM.Api
+dotnet tool restore
+```
+
+**3. Backend** (`http://localhost:5080`). Al arrancar en desarrollo crea las tablas y carga los alumnos de prueba:
 
 ```powershell
 dotnet run --project backend/MiESCOM.Api
 ```
 
-**Frontend** (`http://localhost:5173`):
+**4. Frontend** (`http://localhost:5173`), en otra terminal:
 
 ```powershell
 cd frontend
@@ -27,30 +44,43 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173` y entra con el usuario de demostración:
+**5. Probar:** abre `http://localhost:5173`, elige **Registrarme** y escribe la boleta `2099630001`. El correo con la contraseña temporal aparece en Mailpit, `http://localhost:8025`. Al entrar con ella, la aplicación pide cambiarla.
 
-| Boleta | Contraseña |
+| Boleta de prueba | Caso |
 |---|---|
-| `2099630001` | `Demo1234!` |
+| `2099630001` | Correo institucional |
+| `2099630002` | Solo correo personal |
+| `2099630003` | Sin correo: el registro lo rechaza |
 
-Estas credenciales son ficticias y públicas. No las reutilices en ningún otro lado.
+Todos los datos de prueba son inventados (boletas del año 2099 y correos de dominios reservados).
+
+**Repetir el registro:** `.\scripts\reiniciar-registro.ps1` borra todas las cuentas y los correos de Mailpit; con una boleta (`.\scripts\reiniciar-registro.ps1 2099630001`) borra solo esa. Los alumnos de prueba se conservan y no hace falta reiniciar el backend.
 
 ## Estructura
 
 ```
+docker-compose.yml                   # MySQL 8.4 y Mailpit, solo en 127.0.0.1
+scripts/reiniciar-registro.ps1       # Borra cuentas para repetir el registro (desarrollo)
+database/schema.sql                  # SQL del esquema, generado de la migración (solo para leerlo)
 backend/MiESCOM.Api/
-├── Program.cs                     # Configuración de la API y de la cookie de sesión
-└── Auth/
-    ├── AuthEndpoints.cs           # /api/auth/login, /logout y /me
-    ├── BoletaFormat.cs            # Validación de la boleta (10 dígitos)
-    ├── ICredentialValidator.cs    # Contrato para validar usuarios
-    └── DemoCredentialValidator.cs # Usuario de demostración; se reemplaza más adelante
+├── Program.cs                       # Configuración: base de datos, cookie, límites de intentos
+├── Auth/                            # Login, registro, cambio de contraseña, sesión
+├── Alumnos/                         # /api/alumnos/me y lectura de la CURP
+├── Data/                            # Tablas (Entity Framework Core), migraciones y datos de prueba
+└── Email/                           # Envío de correos (MailKit)
 frontend/src/
-├── App.tsx                        # Decide qué página mostrar según la sesión
-├── api/auth.ts                    # Llamadas a la API
-├── components/Brand.tsx           # Nombre de la aplicación en la barra superior
-└── pages/                         # LoginPage y HomePage
+├── App.tsx                          # Rutas y sesión
+├── api/                             # Llamadas a la API
+├── components/                      # Encabezado, menú lateral, formularios
+└── pages/                           # Login, Registro, Inicio, Mi perfil, Cambiar contraseña
 ```
+
+## Cambiar el esquema de la base de datos
+
+1. Modifica las clases de `backend/MiESCOM.Api/Data/`.
+2. Crea la migración: `dotnet tool restore` y luego `dotnet ef migrations add NombreDelCambio --project backend/MiESCOM.Api --output-dir Data/Migrations`.
+3. Al reiniciar el backend en desarrollo, la migración se aplica sola.
+4. Actualiza el SQL de referencia: `dotnet ef migrations script --project backend/MiESCOM.Api -o database/schema.sql`.
 
 ## Cómo trabajamos
 

@@ -1,3 +1,5 @@
+import { toApiError } from './http'
+
 export type AlumnoPerfil = {
   boleta: string
   nombre: string
@@ -8,35 +10,38 @@ export type AlumnoPerfil = {
   periodoIngreso: string | null
   datosPersonales: {
     curp: string | null
+    /** Calculada a partir de la CURP (AAAA-MM-DD). */
+    fechaNacimiento: string | null
+    /** Calculado a partir de la CURP. */
+    sexo: string | null
     nacionalidad: string | null
+    telefono: string | null
     telefonoCelular: string | null
-    domicilioMunicipio: string | null
-    domicilioEstado: string | null
-    escuelaProcedencia: string | null
   }
+  /** Situación del periodo más reciente; null si el alumno no tiene ninguna registrada. */
   situacionAcademica: {
-    periodoActual: string
-    programaAcademico: string
-    plan: string
-    turno: string
-    tipoInscripcion: string
-    semestreMinimo: number
-    semestreMaximo: number
-    promedio: number
-    creditosAlumno: number
-    creditosEspecialidad: number
-    carga: string
+    periodo: string
+    programaAcademico: string | null
+    plan: string | null
+    turno: string | null
+    tipoInscripcion: string | null
+    semestreMinimo: number | null
+    semestreMaximo: number | null
+    periodosCursados: number | null
+    promedio: number | null
+    creditosAlumno: number | null
+    creditosInscritos: number | null
+    carga: string | null
     gruposOrdinarios: string[]
     gruposRecursamiento: string[]
-  }
+  } | null
 }
 
 export async function getMiPerfil(signal?: AbortSignal): Promise<AlumnoPerfil> {
   const response = await fetch('/api/alumnos/me', { signal })
 
   if (!response.ok) {
-    throw new Error(`Error al obtener el perfil: ${response.status}`)
+    throw await toApiError(response)
   }
-
   return response.json()
 }

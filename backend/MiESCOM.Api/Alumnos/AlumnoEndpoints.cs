@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using MiESCOM.Api.Auth;
+using MiESCOM.Api.Data;
 
 namespace MiESCOM.Api.Alumnos;
 
@@ -6,56 +9,78 @@ public static class AlumnoEndpoints
 {
     public static void MapAlumnoEndpoints(this IEndpointRouteBuilder app)
     {
-        var alumnos = app.MapGroup("/api/alumnos").RequireAuthorization();
+        // Exige sesión y haber cambiado la contraseña temporal.
+        var alumnos = app.MapGroup("/api/alumnos").RequireAuthorization(AuthClaims.PasswordChangedPolicy);
 
         alumnos.MapGet("/me", GetMiPerfil);
     }
 
-    private static IResult GetMiPerfil(ClaimsPrincipal user)
+    /// <summary>Datos del alumno con sesión y su situación académica más reciente.</summary>
+    private static async Task<IResult> GetMiPerfil(
+        ClaimsPrincipal user,
+        MiEscomDbContext db,
+        CancellationToken cancellationToken)
     {
-        var boleta = user.FindFirstValue(ClaimTypes.Name);
-        if (string.IsNullOrWhiteSpace(boleta))
+        var boleta = user.Boleta();
+
+        var alumno = await db.Alumnos
+            .AsNoTracking()
+            .Include(a => a.PeriodoIngreso)
+            .Include(a => a.DatosPersonales)
+            .FirstOrDefaultAsync(a => a.Boleta == boleta, cancellationToken);
+
+        if (alumno is null)
         {
-            return Results.Unauthorized();
+            return Results.NotFound();
         }
 
-        // Datos de ejemplo alineados con el nuevo esquema de PostgreSQL
-        // (cuando conectemos EF Core, esto se leerá directo de alumno, alumno_datos_personales y situacion_academica)
-        var perfil = new AlumnoPerfilResponse(
-            Boleta: boleta,
-            Nombre: "Alumno de",
-            PrimerApellido: "Prueba",
-            SegundoApellido: "Demo",
-            EmailInstitucional: "aprueba2099@alumno.ipn.mx",
-            EmailPersonal: "alumno.prueba@ejemplo.com",
-            PeriodoIngreso: "20271",
-            DatosPersonales: new DatosPersonalesDto(
-                Curp: "PRDA030502HDFRRL01",
-                Nacionalidad: "MEXICANA",
-                TelefonoCelular: "5500000001",
-                DomicilioMunicipio: "Gustavo A. Madero",
-                DomicilioEstado: "Ciudad de México",
-                EscuelaProcedencia: "CECyT 9 Juan de Dios Bátiz"
-            ),
-            SituacionAcademica: new SituacionAcademicaDto(
-                PeriodoActual: "20271",
-                ProgramaAcademico: "ING. EN SIS. COMPUTACIONALES",
-                Plan: "20",
-                Turno: "MATUTINO",
-                TipoInscripcion: "ReInscrito",
-                SemestreMinimo: 7,
-                SemestreMaximo: 8,
-                Promedio: 8.92m,
-                CreditosAlumno: 245.50m,
-                CreditosEspecialidad: 320.00m,
-                Carga: "normal",
-                GruposOrdinarios: ["7CM4", "8CM1"],
-                GruposRecursamiento: []
-            )
-        );
+        var situacion = await db.SituacionesAcademicas
+            .AsNoTracking()
+            .Include(s => s.PeriodoEscolar)
+            .Include(s => s.ProgramaAcademico)
+            .Include(s => s.Plan)
+            .Where(s => s.Boleta == boleta)
+            .OrderByDescending(s => s.PeriodoEscolar.Clave)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return Results.Ok(perfil);
+        var curp = alumno.DatosPersonales?.Curp;
+
+        return Results.Ok(new AlumnoPerfilResponse(
+            Boleta: alumno.Boleta,
+            Nombre: alumno.Nombre,
+            PrimerApellido: alumno.PrimerApellido,
+            SegundoApellido: alumno.SegundoApellido,
+            EmailInstitucional: alumno.EmailInstitucional,
+            EmailPersonal: alumno.EmailPersonal,
+            PeriodoIngreso: alumno.PeriodoIngreso?.Clave,
+            DatosPersonales: new DatosPersonalesDto(
+                Curp: curp,
+                FechaNacimiento: Curp.FechaNacimiento(curp),
+                Sexo: Curp.Sexo(curp),
+                Nacionalidad: alumno.DatosPersonales?.Nacionalidad,
+                Telefono: alumno.DatosPersonales?.Telefono,
+                TelefonoCelular: alumno.DatosPersonales?.TelefonoCelular),
+            SituacionAcademica: situacion is null ? null : new SituacionAcademicaDto(
+                Periodo: situacion.PeriodoEscolar.Clave,
+                ProgramaAcademico: situacion.ProgramaAcademico?.Nombre,
+                Plan: situacion.Plan?.Clave,
+                Turno: situacion.Turno,
+                TipoInscripcion: situacion.TipoInscripcion,
+                SemestreMinimo: situacion.SemestreMinimo,
+                SemestreMaximo: situacion.SemestreMaximo,
+                PeriodosCursados: situacion.PeriodosCursados,
+                Promedio: situacion.Promedio,
+                CreditosAlumno: situacion.CreditosAlumno,
+                CreditosInscritos: situacion.CreditosInscritos,
+                Carga: situacion.Carga,
+                GruposOrdinarios: SplitGroups(situacion.GruposOrdinarios),
+                GruposRecursamiento: SplitGroups(situacion.GruposRecursamiento))));
     }
+
+    private static string[] SplitGroups(string? grupos) =>
+        string.IsNullOrWhiteSpace(grupos)
+            ? []
+            : grupos.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     public sealed record AlumnoPerfilResponse(
         string Boleta,
@@ -66,31 +91,30 @@ public static class AlumnoEndpoints
         string? EmailPersonal,
         string? PeriodoIngreso,
         DatosPersonalesDto DatosPersonales,
-        SituacionAcademicaDto SituacionAcademica
-    );
+        SituacionAcademicaDto? SituacionAcademica);
 
+    /// <summary>La fecha de nacimiento y el sexo se calculan a partir de la CURP.</summary>
     public sealed record DatosPersonalesDto(
         string? Curp,
+        DateOnly? FechaNacimiento,
+        string? Sexo,
         string? Nacionalidad,
-        string? TelefonoCelular,
-        string? DomicilioMunicipio,
-        string? DomicilioEstado,
-        string? EscuelaProcedencia
-    );
+        string? Telefono,
+        string? TelefonoCelular);
 
     public sealed record SituacionAcademicaDto(
-        string PeriodoActual,
-        string ProgramaAcademico,
-        string Plan,
-        string Turno,
-        string TipoInscripcion,
-        short SemestreMinimo,
-        short SemestreMaximo,
-        decimal Promedio,
-        decimal CreditosAlumno,
-        decimal CreditosEspecialidad,
-        string Carga,
+        string Periodo,
+        string? ProgramaAcademico,
+        string? Plan,
+        string? Turno,
+        string? TipoInscripcion,
+        short? SemestreMinimo,
+        short? SemestreMaximo,
+        short? PeriodosCursados,
+        decimal? Promedio,
+        decimal? CreditosAlumno,
+        decimal? CreditosInscritos,
+        string? Carga,
         string[] GruposOrdinarios,
-        string[] GruposRecursamiento
-    );
+        string[] GruposRecursamiento);
 }

@@ -7,7 +7,9 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5080",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "RateLimits__RegistroPer15Minutes": "100",
+        "RateLimits__LoginPerMinute": "60"
       }
     }
   }
